@@ -21,7 +21,7 @@ jobs:
       - run:
           name: Run UnitTest
           command: ./gradlew test
-      - run 
+      - run:
           name: Setup Emalator 
           commands: emulator -avd circleci-android22 -no-audio -no-window:
           background: true
