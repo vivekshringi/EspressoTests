@@ -5,6 +5,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mytaxi.android_demo.activities.MainActivity;
+
+import android.content.Context;
 import android.support.test.espresso.action.ViewActions;
 import android.support.test.runner.AndroidJUnit4;
 import org.junit.Before;
@@ -15,6 +17,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import android.support.test.filters.SmallTest;
 import android.support.test.rule.ActivityTestRule;
+import android.support.test.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -38,10 +43,12 @@ import static org.hamcrest.Matchers.not;
 @SmallTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MyTaxiEspressoTests {
-    private String seed = "a1f30d446f820665";
     private static final String SEARCH_TEXT = "sa";
     private static final String SELECTED_DRIVER = "Sarah Scott";
     private MainActivity mActivity = null;
+    Login loginActions = new Login();
+    Driver driver = new Driver();
+    GetCredentials getCredentials = new GetCredentials();
 
     @Rule
     public ActivityTestRule<MainActivity> activityTestRule
@@ -53,82 +60,24 @@ public class MyTaxiEspressoTests {
     }
 
     @Test
-    public void test001_Login() throws Exception {
-        String USERNAME = fetchingLoginInfo(seed,"username");
-        String PASSWORD = fetchingLoginInfo(seed,"password");
-        onView(withId(R.id.edt_username))
-                .perform(ViewActions.typeText(USERNAME),closeSoftKeyboard());
-        onView(withId(R.id.edt_password))
-                .perform(typeText(PASSWORD), closeSoftKeyboard());
-        onView(withId(R.id.btn_login))
-                .perform(click());
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        onView(withId(R.id.textSearch)).check(matches(isClickable()));
-        onView(withId(R.id.toolbar))
-                .perform(click());
-        onView(withId(R.id.nav_username)).check(matches(withText(USERNAME)));
+    public void test001_Login(){
+        String USERNAME = getCredentials.getValue("username");
+        String PASSWORD = getCredentials.getValue("password");
+        loginActions.loginUser(USERNAME,PASSWORD);
     }
 
     @Test
-    public void test002_SearchDriver(){
-        onView(withId(R.id.textSearch)).perform(click(),typeText(SEARCH_TEXT),clearText(),typeText(SEARCH_TEXT));
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public void test002_SearchAndCallingDriver(){
+        if(loginActions.checkLoginInfo()){
+            test001_Login();
         }
-        onView(withText("mytaxi demo")).check(matches(isEnabled()));
-        onView(withText(SELECTED_DRIVER)).inRoot(withDecorView(not(is(mActivity.getWindow().getDecorView())))).perform(click());
-
-        onView(withId(R.id.textViewDriverName)).inRoot(withDecorView(not(is(mActivity.getWindow().getDecorView())))).check(matches(withText(SELECTED_DRIVER)));
-        onView(withId(R.id.fab)).perform(click());
+        driver.searchDriver(SEARCH_TEXT, SELECTED_DRIVER, mActivity);
+        driver.callingDriver();
     }
 
    @Test
     public void test003_Logout() {
-        onView(withContentDescription("Open navigation drawer"))
-                .perform(click());
-       try {
-           Thread.sleep(2000);
-       } catch (InterruptedException e) {
-           e.printStackTrace();
-       }
-        onView(withId(R.id.design_menu_item_text))
-               .perform(click());
-    }
-
-    public String fetchingLoginInfo(String seed, String key){
-        try {
-            final String RANDOM_USER_URL = "https://randomuser.me/api/";
-            OkHttpClient mClient = new OkHttpClient();
-            String url = RANDOM_USER_URL + "?seed=" + seed;
-            Request request = new Request.Builder().url(url).build();
-            Response r = mClient.newCall(request).execute();
-            JsonParser mJsonParser = new JsonParser();
-            JsonObject jsonObject = mJsonParser.parse(r.body().string()).getAsJsonObject();
-            JsonArray results = jsonObject.getAsJsonArray("results");
-            JsonElement jsonElement = results.get(0);
-            JsonObject jsonUser = jsonElement.getAsJsonObject();
-            JsonObject login = jsonUser.getAsJsonObject("login");
-            return (null == login.get(key).getAsString() ? "" : login.get(key).getAsString());
-        }
-        catch(NullPointerException e) {
-            System.out.println("No results for key and seed combination"+e);
-            return "No Result";
-
-        }
-
-        catch(Exception e) {
-
-            System.out.println("No results for key and seed combination"+e);
-            return "No Results";
-
-        }
-
+       loginActions.logout();
     }
 
 }
