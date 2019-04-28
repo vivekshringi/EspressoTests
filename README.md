@@ -7,8 +7,8 @@ IDE
 All Tests
 - All tests were executed on Emulator with API 26
 
-- to run espresso tests following command can be user 
-./gradlew connectedAndroidTest
+- to run espresso tests following command can be used
+"./gradlew connectedAndroidTest"
 
 Scenarios covers 
 - Login 
